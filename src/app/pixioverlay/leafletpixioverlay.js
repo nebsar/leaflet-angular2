@@ -23,7 +23,7 @@ function projectionZoom(map) {
   return (maxZoom + minZoom) / 2;
 }
 
-const PixiOverlay = L.Layer.extend({
+export const PixiOverlay = L.Layer.extend({
 
   options: {
     // @option padding: Number = 0.1
@@ -65,11 +65,14 @@ const PixiOverlay = L.Layer.extend({
     },
   },
 
-  initialize: function (drawCallback, pixiContainer, options) {
+  initialize: function (drawCallback, options) {
     L.setOptions(this, options);
     L.stamp(this);
     this._drawCallback = drawCallback;
-    this._pixiContainer = pixiContainer;
+    this._pixiContainer = new PIXI.Container();
+    // this._pixiContainer.eventMode = 'dynamic';
+    // this._pixiContainer.interactiveChildren = true;
+    this.symbolsArray = [];
     this._rendererOptions = {
       resolution: this.options.resolution,
       antialias: true,
@@ -99,6 +102,26 @@ const PixiOverlay = L.Layer.extend({
   },
 
   _setEvents: function () {
+  },
+
+  addGraphics: function (graphics) {
+    this.symbolsArray.push(graphics);
+    this._pixiContainer.addChild(graphics);
+  },
+
+  removeGraphicsAt: function (index) {
+    this._pixiContainer.removeChildAt(index);
+    this.symbolsArray.splice(index, 1);
+
+  },
+
+  removeGraphics: function (graphics) {
+    this._pixiContainer.removeChild(graphics);
+    this.symbolsArray = this.symbolsArray.filter(item => item != graphics);
+  },
+
+  getSymbolsArray: function () {
+    return this.symbolsArray;
   },
 
   onAdd: function (targetMap) {
@@ -162,6 +185,9 @@ const PixiOverlay = L.Layer.extend({
       },
       getMap: function () {
         return _layer._map;
+      },
+      getSymbolsArray: function () {
+        return _layer.symbolsArray;
       }
     };
 
@@ -389,4 +415,3 @@ const PixiOverlay = L.Layer.extend({
   },
 });
 
-export {PixiOverlay}

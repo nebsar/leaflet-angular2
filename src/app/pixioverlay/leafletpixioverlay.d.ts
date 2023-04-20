@@ -1,5 +1,8 @@
 import * as L from 'leaflet';
 import * as PIXI from 'pixi.js';
+import {DisplayObject} from "pixi.js";
+import {Display} from "../interface/MapDisplay";
+import {Entity} from "../entity/entity";
 
 // declare function setEventSystem(renderer: PIXI.Renderer, destroyInteractionManager: boolean, autoPreventDefault: boolean): void;
 
@@ -12,6 +15,7 @@ interface Utils {
   getRenderer: () => PIXI.Renderer;
   getContainer: () => PIXI.Container;
   getMap: () => L.Map;
+  getSymbolsArray: () => Entity[];
 }
 
 interface PixiOverlayOptions {
@@ -25,19 +29,24 @@ interface PixiOverlayOptions {
   preserveDrawingBuffer?: boolean;
   clearBeforeRender?: boolean;
   shouldRedrawOnMove?: () => boolean;
-  pane?: 'markerPane' | 'overlayPane' | 'shadowPane' | 'tilePane' | 'mapPane' |'tooltipPane' | 'popupPane';
+  pane?: 'markerPane' | 'overlayPane' | 'shadowPane' | 'tilePane' | 'mapPane' | 'tooltipPane' | 'popupPane';
   zIndex?: number;
-
 }
 
 declare class PixiOverlay extends L.Layer {
+
+  constructor(drawCallback: (utils: Utils) => void, options?: PixiOverlayOptions);
+
   redraw: (data?: any) => this;
   destroy: () => void;
   bringToFront: () => this;
+  getSymbolsArray: () => Entity[];
+  addGraphics: (graphics: Entity) => void;
+  removeGraphicsAt: (index: number) => void;
+  removeGraphics: (graphics: Entity) => void;
   bringToBack: () => this;
   setOptions: (options: PixiOverlayOptions) => void;
   getOptions: () => PixiOverlayOptions;
-  constructor(drawCallback: (utils: any) => void, pixiContainer?: PIXI.Container, options?: PixiOverlayOptions);
 
 
 }

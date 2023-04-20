@@ -31,7 +31,7 @@
     "leaflet-path-drag": "^1.8.0-beta.3",
     "mgrs": "^2.0.0",
     "milsymbol": "^2.2.0",
-    "pixi.js": "^7.2.2",
+    "pixi.js": "^7.2.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.12.0"

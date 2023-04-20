@@ -6,56 +6,53 @@ import {
   getGzd,
   getLineSlope,
 } from './CommonUtils';
-import { llToMgrs, llToUtm, utmToLl } from './Coordinates';
-import * as L from "leaflet";
+import {llToMgrs, llToUtm, utmToLl} from './Coordinates';
+import * as L from 'leaflet';
 
-// The following indicies are used to indentify coordinates returned from gzd-utils
-const SW_INDEX = 0;
-const NW_INDEX = 1;
-const NE_INDEX = 2;
+export const MGRSGraticuleLayer = L.Layer.extend({
 
-const LATITUDE_INDEX = 1;
-const LONGITUDE_INDEX = 0;
+  options: {
+    showGrid: true,
+    color: '#888888',
+    font: '14px Courier New',
+    fontColor: '#ffffff',
+    dashArray: [6, 6],
+    weight: 1.5,
+    gridColor: '#000',
+    hkColor: '#990000', //Font background colour and dash colour
+    hkDashArray: [4, 4],
+    gridFont: '14px Courier New',
+    gridFontColor: '#ffffff',
+    gridDashArray: [],
+    hundredKMinZoom: 6,
+    tenKMinZoom: 9,
+    oneKMinZoom: 12,
+    hundredMMinZoom: 15,
+  },
 
-const MGRS_REGEX = /([0-9]+[A-Z])([A-Z]{2})(\d+)/;
-const GZD_INDEX = 1;
-const HK_INDEX = 2;
-const GRID_INDEX = 3;
+  initialize: function (options) {
+    this._setOptions(options);
+  },
 
-// const MgrsGraticule = (map, props) => {
-//   new Graticule(map, props.name, props.checked, props.options);
-//
-//   return null;
-// };
+  _setOptions: function (options) {
+    L.setOptions(this, options);
+    L.stamp(this);
+  },
 
-export class MGRSGraticule {
-  constructor(map, name, checked, opt) {
+
+  onAdd: function (map) {
     this.currLatInterval = 8;
     this.currLngInterval = 6;
-
-    this.defaultOptions = {
-      showGrid: true,
-      color: '#888888',
-      font: '14px Courier New',
-      fontColor: '#ffffff',
-      dashArray: [6, 6],
-      weight: 1.5,
-      gridColor: '#000',
-      hkColor: '#990000', //Font background colour and dash colour
-      hkDashArray: [4, 4],
-      gridFont: '14px Courier New',
-      gridFontColor: '#ffffff',
-      gridDashArray: [],
-      hundredKMinZoom: 6,
-      tenKMinZoom: 9,
-      oneKMinZoom: 12,
-      hundredMMinZoom: 15,
-    };
-
-    // Override any default options with the options passed from props
-    this.options = { ...this.defaultOptions, ...opt };
-
     this.map = map;
+    this.name = "mgrs";
+    this._initContainer();
+  },
+
+  onRemove: function (map) {
+
+  },
+
+  _initContainer: function () {
     this.canvas = document.createElement('canvas');
     this.canvas.classList.add('leaflet-zoom-animated');
     this.canvas.classList.add(this.name);
@@ -68,21 +65,17 @@ export class MGRSGraticule {
     this.map.on('overlayremove', this.clearRect, this);
 
     // Strip any spaces as they can't be used in class names
-    this.name = name.replace(/\s/g, '');
+    this.name = this.name.replace(/\s/g, '');
 
-    if (checked) {
-      this.options.showGrid = true;
-      this.reset();
-    } else {
-      this.options.showGrid = false;
-    }
+    this.options.showGrid = true;
+    this.reset();
 
     // Add the canvas only if it hasn't already been added
     if (!this.map.getPanes().overlayPane.classList.contains(this.name)) {
       this.map.getPanes().overlayPane.appendChild(this.canvas);
       this.canvas.style.zIndex = 100;
     }
-  }
+  },
 
   clearRect(e) {
     if (e.name === this.name) {
@@ -90,14 +83,14 @@ export class MGRSGraticule {
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.options.showGrid = false;
     }
-  }
+  },
 
   showGraticule(e) {
     if (e.name === this.name) {
       this.options.showGrid = true;
       this.reset();
     }
-  }
+  },
 
   reset() {
     if (!this.options.showGrid) {
@@ -126,12 +119,12 @@ export class MGRSGraticule {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.drawGrid(this.ctx);
     this.drawGzd(this.ctx);
-  }
+  },
 
   drawGzd(ctx) {
-    if (!this.canvas || !this.map || !this.ctx) {
-      return;
-    }
+    // if (!this.canvas || !this.map || !this.ctx) {
+    //   return;
+    // }
 
     if (this.map.getZoom() < this.options.minZoom) {
       return;
@@ -145,7 +138,7 @@ export class MGRSGraticule {
       ctx.font = this.options.font;
     }
 
-    let leftTop = this.map.containerPointToLatLng({ x: 0, y: 0 });
+    let leftTop = this.map.containerPointToLatLng({x: 0, y: 0});
     let rightBottom = this.map.containerPointToLatLng({
       x: this.canvas.width,
       y: this.canvas.height,
@@ -205,7 +198,7 @@ export class MGRSGraticule {
     for (let i = -180; i <= rightBottom.lng + 6; i += this.currLngInterval) {
       this.drawLongitudeLine(ctx, i, leftTop.lat, rightBottom.lat);
     }
-  }
+  },
 
   drawLatitudeLine(ctx, tick, lngLeft, lngRight) {
     const leftEnd = this.map.latLngToContainerPoint({
@@ -222,7 +215,7 @@ export class MGRSGraticule {
     ctx.moveTo(leftEnd.x, leftEnd.y);
     ctx.lineTo(rightEnd.x, rightEnd.y);
     ctx.stroke();
-  }
+  },
 
   drawLongitudeLine(ctx, tick, latTop, latBottom) {
     if (latTop >= 84) {
@@ -455,7 +448,7 @@ export class MGRSGraticule {
     ctx.stroke();
 
     this.drawGzdLabels(tick);
-  }
+  },
 
   /** This function encapsulates drawing labels for GZDs
    *
@@ -517,7 +510,7 @@ export class MGRSGraticule {
         drawLabel(this.ctx, gzdLabel, this.options.fontColor, this.options.color, labelXy);
       }
     }
-  }
+  },
 
   /**
    *
@@ -535,7 +528,7 @@ export class MGRSGraticule {
     }
 
     return label;
-  }
+  },
 
   _drawLine(ctx, notHkLine) {
     if (notHkLine) {
@@ -549,10 +542,10 @@ export class MGRSGraticule {
     } else {
       ctx.lineWidth = this.options.weight;
       ctx.strokeStyle = this.options.hkColor;
-     // ctx.setLineDash(this.options.hkDashArray);
+      // ctx.setLineDash(this.options.hkDashArray);
       ctx.stroke();
     }
-  }
+  },
 
   getVizGzds() {
     const nwBoundMgrs = llToMgrs(
@@ -583,12 +576,12 @@ export class MGRSGraticule {
       visibleGzds = null;
     }
     return visibleGzds;
-  }
+  },
 
   drawGrid(ctx) {
-    if (!this.canvas || !this.map) {
-      return;
-    }
+    // if (!this.canvas || !this.map) {
+    //   return;
+    // }
 
     if (this.map.getZoom() < this.options.hundredKMinZoom) {
       return;
@@ -708,7 +701,8 @@ export class MGRSGraticule {
           });
           const notHkLine = eastingElem % 100000 !== 0;
           this._drawLine(ctx, notHkLine);
-        } catch (e) {}
+        } catch (e) {
+        }
       });
 
       // Lines of constant Northings
@@ -870,7 +864,7 @@ export class MGRSGraticule {
             try {
               let labelLl = utmToLl(eastingElem, northingArray[1], zoneNumber, zoneLetter);
 
-              labelXy = this.map.latLngToContainerPoint({ lat: effectiveSouthBoundary, lng: labelLl.lng });
+              labelXy = this.map.latLngToContainerPoint({lat: effectiveSouthBoundary, lng: labelLl.lng});
             } catch (e) {
               return;
             }
@@ -889,7 +883,7 @@ export class MGRSGraticule {
           try {
             let labelLl = utmToLl(eastingArray[eastingArray.length - 1], northingElem, zoneNumber, zoneLetter);
 
-            labelXy = this.map.latLngToContainerPoint({ lat: labelLl.lat, lng: effectiveEastBoundary });
+            labelXy = this.map.latLngToContainerPoint({lat: labelLl.lat, lng: effectiveEastBoundary});
           } catch (e) {
             return;
           }
@@ -904,5 +898,6 @@ export class MGRSGraticule {
       }
     });
   }
-}
 
+
+});
