@@ -3,6 +3,7 @@ import * as PIXI from 'pixi.js';
 import {DisplayObject} from "pixi.js";
 import {Display} from "../interface/MapDisplay";
 import {Entity} from "../entity/entity";
+import {LatLng, Point} from "leaflet";
 
 // declare function setEventSystem(renderer: PIXI.Renderer, destroyInteractionManager: boolean, autoPreventDefault: boolean): void;
 
@@ -16,6 +17,8 @@ interface Utils {
   getContainer: () => PIXI.Container;
   getMap: () => L.Map;
   getSymbolsArray: () => Entity[];
+  getFirstRenderingArray: () => Entity[];
+  setMarkerScale: (prevZoom: number, zoom: number, invScale: number) => Promise<void>;
 }
 
 interface PixiOverlayOptions {
@@ -41,12 +44,13 @@ declare class PixiOverlay extends L.Layer {
   destroy: () => void;
   bringToFront: () => this;
   getSymbolsArray: () => Entity[];
+  getFirstRenderingArray: () => Entity[];
   addGraphics: (graphics: Entity) => void;
   removeGraphicsAt: (index: number) => void;
   removeGraphics: (graphics: Entity) => void;
   bringToBack: () => this;
   setOptions: (options: PixiOverlayOptions) => void;
   getOptions: () => PixiOverlayOptions;
-
-
+  project: (latLng: LatLng, zoom?: number) => Point;
+  unProject: (point: Point, zoom?: number) => LatLng;
 }

@@ -126,6 +126,8 @@ export class MGRSGraticule {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.drawGrid(this.ctx);
     this.drawGzd(this.ctx);
+
+
   }
 
   drawGzd(ctx) {

@@ -16,19 +16,15 @@ import {MilitaryElementType} from "../interface/ElementFactory";
 
 
 @Component({
-  selector: 'app-map',
+  selector: 'vcci-map',
   templateUrl: './map.component.html',
   styleUrls: ['./map.component.css']
 })
 export class MapComponent implements OnInit {
   map: L.Map;
   mapDisplay: Display;
-
-
   dragged: boolean = false;
-
   mouseDown: boolean = false;
-
 
   /* To use for injections */
   constructor() {
@@ -43,8 +39,8 @@ export class MapComponent implements OnInit {
     this.map = this.mapDisplay.getMap() as L.Map;
 
     //this.mapDisplay.getElementFactory().createMilitaryElement(MilitaryElementType.SYMBOL, milSymbol1);
-
-    this.mapDisplay.getLayerFactory().createMGRSGraticuleLayer();
+    // this.mapDisplay.getLayerFactory().createMGRSGraticuleLayer();
+   this.mapDisplay.getLayerHandler().addLayer(this.mapDisplay.getLayerFactory().createMGRSGraticuleLayer());
 
 
     // var polyline = L.polyline([[43.1, -81], [43.2, -80.5], [43.3, -81.5]]).addTo(this.map);
@@ -257,11 +253,40 @@ export class MapComponent implements OnInit {
 //     ctx.lineCap = "round";
 //     ctx.stroke();
 
-    let tiledLayer: Layer = this.mapDisplay.getLayerFactory().createTiledLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    // let tiledLayer = this.mapDisplay.getLayerFactory().createTiledLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    //
+    // this.mapDisplay.getLayerHandler().addLayer(tiledLayer);
 
-    this.mapDisplay.getLayerHandler().addLayer(tiledLayer);
+    let tiledLayer = this.mapDisplay.getLayerFactory().createTiledLayer('https://server.arcgisonline.com/arcgis/rest/services/NatGeo_World_Map/MapServer/WMTS') as Promise<Layer>;
+    tiledLayer.then(result=>{
+      this.mapDisplay.getLayerHandler().addLayer(result);
+    });
 
-    // this.mapDisplay.getLayerFactory().addTiledLayer('https://tiles.geoservice.dlr.de/service/wmts');
+
+    //   var xhr = new XMLHttpRequest();
+    //
+    //   xhr.open("GET", 'https://server.arcgisonline.com/arcgis/rest/services/NatGeo_World_Map/MapServer/WMTS');
+    //   xhr.onload = function () {
+    //
+    //     let getCapabilitiesXML = xhr.responseXML;
+    //
+    //     let layerNodes: HTMLCollectionOf<Element> | undefined = getCapabilitiesXML?.getElementsByTagName("Layer");
+    //
+    //     if (layerNodes) {
+    //     for (let i = 0; i < layerNodes.length; i++) {
+    //       console.log(layerNodes[i].getElementsByTagName("ows:Title")[0].textContent);
+    //       let tileMatrixSet = layerNodes[i].getElementsByTagName("TileMatrixSet")[0];
+    //       console.log(tileMatrixSet.textContent);
+    //     }
+    //   }
+    //
+    //   console.log(layerNodes);
+    //
+    // };
+    //
+    // xhr.send();
+
+
 
 
     var drawnFeatures: L.FeatureGroup = new L.FeatureGroup<any>();
@@ -286,7 +311,9 @@ export class MapComponent implements OnInit {
 
 ///////////////// GEOMAN CONTROL BUTTONS //////////////////////
 
-    this.map.addLayer(drawnFeatures);
+    this
+      .map
+      .addLayer(drawnFeatures);
 
 
     // let firstDraw = true;
@@ -297,7 +324,8 @@ export class MapComponent implements OnInit {
 
     //this.militarySymbolLayer.bringToFront();
 
-    let i: number = 0;
+    let
+      i: number = 0;
 
     /*
        async function myCallback(): Promise<void> {

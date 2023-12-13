@@ -2,6 +2,7 @@ import {Layer, Map} from 'leaflet'
 import {MapLayer} from "../interface/MapLayer";
 import {PixiOverlay} from "../pixioverlay/leafletpixioverlay";
 import {LeafletMilitaryMapElement} from "./LeafletMilitaryMapElement";
+import {GISElement} from "../interface/GISElement";
 
 export class LeafletMapLayer extends MapLayer {
 
@@ -20,8 +21,9 @@ export class LeafletMapLayer extends MapLayer {
     }
   }
 
-  addElement(element: LeafletMilitaryMapElement): void {
+  override addElement(element: GISElement): void {
     (this.gisLayer as PixiOverlay).addGraphics(element.GISRefObject);
+    (this.gisLayer as PixiOverlay).redraw();
   }
 
 }

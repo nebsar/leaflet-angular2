@@ -68,11 +68,12 @@ export const PixiOverlay = L.Layer.extend({
   initialize: function (drawCallback, options) {
     L.setOptions(this, options);
     L.stamp(this);
+
     this._drawCallback = drawCallback;
     this._pixiContainer = new PIXI.Container();
-    // this._pixiContainer.eventMode = 'dynamic';
-    // this._pixiContainer.interactiveChildren = true;
     this.symbolsArray = [];
+    this.firstRenderingArray = [];
+
     this._rendererOptions = {
       resolution: this.options.resolution,
       antialias: true,
@@ -105,7 +106,8 @@ export const PixiOverlay = L.Layer.extend({
   },
 
   addGraphics: function (graphics) {
-    this.symbolsArray.push(graphics);
+    this.firstRenderingArray.push(graphics);
+    //this.symbolsArray.push(graphics);
     this._pixiContainer.addChild(graphics);
   },
 
@@ -122,6 +124,10 @@ export const PixiOverlay = L.Layer.extend({
 
   getSymbolsArray: function () {
     return this.symbolsArray;
+  },
+
+  getFirstRenderingArray: function () {
+    return this.firstRenderingArray;
   },
 
   onAdd: function (targetMap) {
@@ -188,6 +194,16 @@ export const PixiOverlay = L.Layer.extend({
       },
       getSymbolsArray: function () {
         return _layer.symbolsArray;
+      },
+
+      getFirstRenderingArray: function () {
+        return _layer.firstRenderingArray;
+      },
+
+      setMarkerScale: function (prevZoom, zoom, invScale) {
+          _layer.symbolsArray.forEach(entity => {
+            entity.scale.set(invScale);
+          });
       }
     };
 
@@ -353,7 +369,6 @@ export const PixiOverlay = L.Layer.extend({
   _setAutoZIndex: function (compare) {
     // go through all other layers of the same pane, set zIndex to max + 1 (front) or min - 1 (back)
     let layers = this.getPane().children;
-    console.log(layers);
     let edgeZIndex = -compare(-Infinity, Infinity); // -Infinity for max, Infinity for min
 
     for (let i = 0, len = layers.length, zIndex; i < len; i++) {
@@ -413,5 +428,18 @@ export const PixiOverlay = L.Layer.extend({
     }
     return this;
   },
+
+  project(latLng, zoom){
+    zoom = (zoom === undefined) ? this._initialZoom : zoom;
+    let projectedPoint = this._map.project(L.latLng(latLng), zoom);
+    return projectedPoint;
+  },
+
+  unProject(point, zoom){
+    zoom = (zoom === undefined) ? this._initialZoom : zoom;
+    let projectedPoint = L.point(point);
+    return map.unproject(projectedPoint, zoom);
+  }
+
 });
 

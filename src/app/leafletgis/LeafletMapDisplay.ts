@@ -1,18 +1,19 @@
 import {MapDisplay} from "../interface/MapDisplay";
-import {ElementFactory} from "../interface/ElementFactory";
+import {ElementFactory, MilitaryElementType, Position} from "../interface/ElementFactory";
 import {LayerFactory} from "../interface/LayerFactory";
 import {LayerHandler} from "../interface/LayerHandler";
-import {latLng, latLngBounds, Map, MapOptions} from "leaflet";
+import * as L from "leaflet";
+import {latLng, latLngBounds, LatLngExpression, Map, MapOptions} from "leaflet";
 import {LeafletElementFactory} from "./LeafletElementFactory";
 import {LeafletLayerFactory} from "./LeafLetLayerFactory";
 import {LeafletLayerHandler} from "./LeafletLayerHandler";
-import * as L from "leaflet";
 import {Container, Graphics, Renderer, Sprite} from "pixi.js";
 import {Entity} from "../entity/entity";
-import * as PIXI from "pixi.js";
 import {PixiOverlay, Utils} from "../pixioverlay/leafletpixioverlay";
 import {LeafletMilitaryMapElement} from "./LeafletMilitaryMapElement";
 import {LeafletMapLayer} from "./LeafletMapLayer";
+import {GISElement} from "../interface/GISElement";
+import { Elem, LocationSettable } from './LocationSettable';
 
 export class LeafletMapDisplay extends MapDisplay {
   leafletMap: Map;
@@ -49,13 +50,19 @@ export class LeafletMapDisplay extends MapDisplay {
     let milSymbol11 = 'GFG*GPOW--****X';
     let milSymbol12 = 'GFG*GPPD--****X';
 
+    const deneme:any = new Elem();
+
+    if (deneme.setLocation !== undefined){
+      (deneme as LocationSettable).setLocation();
+    }
+
     let symbols: string[] = [milSymbol1, milSymbol2, milSymbol3, milSymbol4, milSymbol5, milSymbol6, milSymbol7, milSymbol8, milSymbol9, milSymbol10, milSymbol11, milSymbol12];
 
-    const centroid: L.LatLngExpression = [0.0, 0.0]; //
+    const centroid: Position = [0.0, 0.0]; //
     this.leafletMap = new Map('map', {
       editable: true,
-      center: centroid,
-      zoom: 12,
+      center: centroid as unknown as LatLngExpression,
+      zoom: 2,
       attributionControl: false,
       maxBoundsViscosity: 1.0,
       maxZoom: 21,
@@ -76,7 +83,7 @@ export class LeafletMapDisplay extends MapDisplay {
 
     this.leafletMap.on('mousemove', (e) => {
       if (this.selectedGraphic && this.mouseDown) {
-        let point: L.Point = project(e.latlng);
+        let point: L.Point = this.militarySymbolLayer.project(e.latlng);
         this.selectedGraphic.x = point.x;
         this.selectedGraphic.y = point.y;
         this.militarySymbolLayer.redraw();
@@ -112,95 +119,76 @@ export class LeafletMapDisplay extends MapDisplay {
       }
     });
 
-    let project: Function;
-    let unProject: Function;
-    let firstDraw: boolean = true;
-    let prevZoom: number;
 
-    //pixiContainer.eventMode = 'dynamic';
-    //pixiContainer.interactiveChildren = true;
+    let militaryLayer = this.getLayerFactory().createMilitarySymbolLayer();
 
-    this.militarySymbolLayer = new PixiOverlay((utils: Utils) => {
-      const zoom: number = utils.getMap().getZoom();
-      const container: Container = utils.getContainer();
-      const renderer: Renderer = utils.getRenderer();
-      const map: L.Map = utils.getMap();
-      project = utils.latLngToLayerPoint;
-      unProject = utils.layerPointToLatLng;
-      const scale: number = utils.getScale(zoom);
-      const invScale: number = 1 / scale;
-      let symbolsArray = utils.getSymbolsArray();
-      symbolsArray.forEach((marker) => {
-        if (marker.selected) {
-          //console.log("selection box?")
-          marker.addSelectionBox();
-        }
-      });
-
-      if (firstDraw) {
-        symbolsArray.forEach((marker) => {
-          const coords: L.Point = project(marker.location);
-          marker.x = coords.x;
-          marker.y = coords.y;
-          //marker.anchor.set(0.5, 1);
-        });
-      }
-
-      if (firstDraw || prevZoom !== zoom) {
-        const mapBounds: L.LatLngBounds = map.getBounds();
-        //  console.log(project(mapBounds.getNorthWest()) + " " + project(mapBounds.getNorthEast()) + " " + project(mapBounds.getSouthWest()) + " " + project(mapBounds.getSouthEast()));
-        // console.log(container.getBounds());
-        //container.set = (new Rectangle());
-        symbolsArray.forEach((marker) => {
-          marker.scale.set(invScale);
-        });
-      }
-
-      firstDraw = false;
-      prevZoom = zoom;
-
-      renderer.render(container);
-    }, {
-      //pane: 'markerPane',
-      // forceCanvas : true
-    });
-
-    let militaryLayer: LeafletMapLayer = new LeafletMapLayer(this.militarySymbolLayer, this.leafletMap);
-
+    this.militarySymbolLayer = militaryLayer?.getGISLayer() as PixiOverlay;
 
     this.leafletMap.on("layeradd", this.onLayerAdd);
 
 
-    for (let i: number = 0; i < 5000; i++) {
-      let latlon: L.LatLngTuple = centroid as L.LatLngTuple;
-      let markerLocation: L.LatLngExpression = [
-        latlon[0] + Math.random() * 60 - 30,
-        latlon[1] + Math.random() * 60 - 30,
+    this.getLayerHandler().addLayer(militaryLayer);
+
+
+    // this.militarySymbolLayer = new PixiOverlay((utils: Utils) => {
+    //   const zoom: number = utils.getMap().getZoom();
+    //   const container: Container = utils.getContainer();
+    //   const renderer: Renderer = utils.getRenderer();
+    //   const map: L.Map = utils.getMap();
+    //   const project:Function = utils.latLngToLayerPoint;
+    //   const scale: number = utils.getScale(zoom);
+    //   const invScale: number = 1 / scale;
+    //   //console.log(`scale is ${invScale}`);
+    //   let symbolsArray = utils.getSymbolsArray();
+    //   let firstRenderingArray = utils.getFirstRenderingArray();
+    //   symbolsArray.forEach((marker) => {
+    //     if (marker.selected) {
+    //       //console.log("selection box?")
+    //       marker.addSelectionBox();
+    //     }
+    //   });
+    //
+    //     while (firstRenderingArray.length > 0) {
+    //       const marker = firstRenderingArray.pop();
+    //       if (marker) {
+    //         const coords: L.Point = project(marker.location);
+    //         marker.x = coords.x;
+    //         marker.y = coords.y;
+    //         symbolsArray.push(marker);
+    //       }
+    //       //marker.anchor.set(0.5, 1);
+    //     }
+    //
+    //   if (prevZoom !== zoom) {
+    //     utils.setMarkerScale(prevZoom, zoom, invScale);
+    //     //const mapBounds: L.LatLngBounds = map.getBounds();
+    //     //  console.log(project(mapBounds.getNorthWest()) + " " + project(mapBounds.getNorthEast()) + " " + project(mapBounds.getSouthWest()) + " " + project(mapBounds.getSouthEast()));
+    //     // console.log(container.getBounds());
+    //     //container.set = (new Rectangle());
+    //   }
+    //
+    //   prevZoom = zoom;
+    //
+    //   renderer.render(container);
+    // }, {
+    //   //pane: 'markerPane',
+    //   // forceCanvas : true
+    // });
+
+
+    for (let i: number = 0; i < 5; i++) {
+      let markerLocation: Position = [
+        centroid[0] + Math.random() * 90 - 10,
+        centroid[1] + Math.random() * 90 - 10,
       ];
 
       let sidc = symbols[Math.floor(Math.random() * symbols.length)];
-      let entitiy = new Entity(sidc, this.getElementFactory() as LeafletElementFactory);
-      // entitiy.interactiveChildren = true;
-      // entitiy.interactive = false;
-      entitiy.setLocation(markerLocation);
-      let marker: LeafletMilitaryMapElement = {
-        sidc: sidc,
-        mapLayer: null,
-        GISRefObject: entitiy
-      }
-      // new LeafletMilitaryMapElement(symbols[Math.floor(Math.random() * symbols.length)], this.getElementFactory() as LeafletElementFactory, markerLocation);
 
-      //  let marker: Entity = new Entity(symbols[Math.floor(Math.random() * symbols.length)], this.getElementFactory() as LeafletElementFactory);
-      //  marker.setLocation(markerLocation);
-      militaryLayer.addElement(marker);
-      // this.militarySymbolLayer.addGraphics(marker);
+      let entity: GISElement = this.getElementFactory().createMilitaryElement(MilitaryElementType.SYMBOL, sidc, markerLocation);
 
-
+      militaryLayer?.addElement(entity);
     }
 
-
-
-    this.getLayerHandler().addLayer(militaryLayer);
 
     //This is about Geoman control buttons.
     const drawingButtonsDiv = document.querySelector('.leaflet-pm-draw');

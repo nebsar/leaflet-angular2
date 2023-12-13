@@ -30,6 +30,7 @@ export class LeafletElementFactory extends MapElementFactory {
     entity.eventMode = 'dynamic';
 
     return {
+      id: 1,
       GISRefObject : entity,
       mapLayer:null,
       sidc: sidc,

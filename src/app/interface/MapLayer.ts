@@ -1,9 +1,12 @@
+import {GISElement} from "./GISElement";
+
 export type GISLayer = {} | null;
 export type Layer = Lyr | null;
 
 export interface Lyr {
   setVisible: (visible: boolean) => void;
   getGISLayer: () => any;
+  addElement: (gisElement: GISElement) => void;
 }
 
 export abstract class MapLayer implements Lyr {
@@ -23,6 +26,8 @@ export abstract class MapLayer implements Lyr {
   getGISLayer():any{
     return this.gisLayer;
   };
+
+  abstract addElement(gisElement: GISElement): void;
 }
 
 

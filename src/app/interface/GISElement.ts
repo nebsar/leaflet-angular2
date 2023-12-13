@@ -1,9 +1,8 @@
 import {Layer} from "./MapLayer";
 
-export interface GISElement {
-
+export interface  GISElement {
   GISRefObject: any;
-
   mapLayer: Layer;
+  id: any;
 
 }

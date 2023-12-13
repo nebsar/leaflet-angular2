@@ -1,4 +1,7 @@
 import {MapMilitaryElement} from "./MapMilitaryElement";
+import {GISElement} from "./GISElement";
+
+export type Position = [number, number, number?]
 
 export enum MilitaryElementType {
   SYMBOL,
@@ -6,14 +9,14 @@ export enum MilitaryElementType {
 }
 
 export interface ElementFactory {
-  createMilitaryElement: (type: MilitaryElementType, sidc: string) => MapMilitaryElement | null;
+  createMilitaryElement: (type: MilitaryElementType, sidc: string, position: Position) => GISElement;
 }
 
 export abstract class MapElementFactory implements ElementFactory {
-  createMilitaryElement(type: MilitaryElementType, sidc: string): MapMilitaryElement | null {
-    return this.gisCreateMilitaryElement(sidc);
+  createMilitaryElement(type: MilitaryElementType, sidc: string, position: Position): GISElement {
+    return this.gisCreateMilitaryElement(sidc, position);
   }
 
-  abstract gisCreateMilitaryElement(sidc: string): MapMilitaryElement;
+  abstract gisCreateMilitaryElement(sidc: string, position: Position): GISElement;
 
 }

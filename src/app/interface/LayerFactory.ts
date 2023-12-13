@@ -2,31 +2,37 @@ import {Layer} from "./MapLayer";
 
 export interface LayerFactory {
 
-  createMGRSGraticuleLayer: () => any;
-  createTiledLayer: (url: string) => Layer;
+  createMGRSGraticuleLayer: () => Layer;
+  createTiledLayer: (url: string, layers?: string[]) => Layer | Promise<Layer>;
+  createMilitarySymbolLayer: () => Layer;
 
 }
 
 export abstract class MapLayerFactory implements LayerFactory {
 
-  abstract createMGRSGraticuleLayer(): any;
+  abstract createMGRSGraticuleLayer(): Layer;
 
-  createTiledLayer(url: string): Layer {
-    if (url.includes("tile")) {
+  createTiledLayer(url: string, layers?: string[]): Layer | Promise<Layer> {
+    if (url.toLowerCase().includes("tile")) {
       return this.gisCreateTiledLayer(url);
-    } else if (url.includes("wms")) {
-      return this.gisCreateWMSLayer(url);
-    } else if (url.includes("wmts")) {
+    } else if (url.toLowerCase().includes("wms")) {
+      return this.gisCreateWMSLayer(url, layers);
+    } else if (url.toLowerCase().includes("wmts")) {
       return this.gisCreateWMTSLayer(url);
     }
     return null;
   }
 
-  abstract gisCreateTiledLayer(url: string): Layer;
+  createMilitarySymbolLayer(): Layer {
+    return this.gisCreateMilitarySymbolLayer();
+  };
 
-  abstract gisCreateWMSLayer(url: string): Layer;
+  protected abstract gisCreateTiledLayer(url: string): Layer | Promise<Layer>;
 
-  abstract gisCreateWMTSLayer(url: string): Layer;
+  protected abstract gisCreateWMSLayer(url: string, layer?: string[]): Layer | Promise<Layer>;
 
+  protected abstract gisCreateWMTSLayer(url: string): Layer | Promise<Layer>;
+
+  protected abstract gisCreateMilitarySymbolLayer(): Layer;
 
 }

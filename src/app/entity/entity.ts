@@ -36,12 +36,12 @@ export class Entity extends Sprite {
     } else {
 
       let symbol = new ms.Symbol(this._sidc, {
-        size: 35,
+        size: 25,
       }).asCanvas();
       this.texture = Texture.from(symbol);
       elementFactory.ms2525IconTextureHash[sidc] = this.texture;
       this.eventMode = 'dynamic';
-      this.interactiveChildren = true;
+     // this.interactiveChildren = true;
       this.cullable = true;
     }
 
@@ -64,7 +64,11 @@ export class Entity extends Sprite {
     });
 
     this.on('mouseenter', () => {
-      console.log('deneme');
+      this.leafletElementFactory.leafletMapDisplay.getMap().getContainer().style.cursor = 'move';
+    });
+
+    this.on('mouseleave', () => {
+      this.leafletElementFactory.leafletMapDisplay.getMap().getContainer().style.cursor = 'auto';
     });
 
     this.on('mousedown', this.onDragStart);
@@ -80,7 +84,7 @@ export class Entity extends Sprite {
 
   onDragStart(event: FederatedPointerEvent) {
     //this.data = event.target as Entity;
-    (this.leafletElementFactory.leafletMapDisplay.getMap() as Map).dragging.disable();
+    this.leafletElementFactory.leafletMapDisplay.getMap().dragging.disable();
     this.alpha = 0.5;
     this.leafletElementFactory.leafletMapDisplay.dragged = true;
     this.leafletElementFactory.leafletMapDisplay.selectedGraphic = this;

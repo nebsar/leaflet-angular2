@@ -11,7 +11,8 @@ import * as L from 'leaflet';
 
 export const MGRSGraticuleLayer = L.Layer.extend({
 
-  options: {
+
+  defaultOptions: {
     showGrid: true,
     color: '#888888',
     font: '14px Courier New',
@@ -30,8 +31,20 @@ export const MGRSGraticuleLayer = L.Layer.extend({
     hundredMMinZoom: 15,
   },
 
-  initialize: function (options) {
-    this._setOptions(options);
+  initialize: function (opt) {
+    this.SW_INDEX = 0;
+    this.NW_INDEX = 1;
+    this.NE_INDEX = 2;
+
+    this.LATITUDE_INDEX = 1;
+    this.LONGITUDE_INDEX = 0;
+
+    this.MGRS_REGEX = /([0-9]+[A-Z])([A-Z]{2})(\d+)/;
+    this.GZD_INDEX = 1;
+    this.HK_INDEX = 2;
+    this.GRID_INDEX = 3;
+    this.options = { ...this.defaultOptions, ...opt };
+    this._setOptions(this.options);
   },
 
   _setOptions: function (options) {
@@ -46,10 +59,11 @@ export const MGRSGraticuleLayer = L.Layer.extend({
     this.map = map;
     this.name = "mgrs";
     this._initContainer();
+    this.showGraticule();
   },
 
   onRemove: function (map) {
-
+    this.clearRect();
   },
 
   _initContainer: function () {
@@ -58,11 +72,6 @@ export const MGRSGraticuleLayer = L.Layer.extend({
     this.canvas.classList.add(this.name);
 
     this.ctx = this.canvas.getContext('2d');
-
-    this.map.on('viewreset', this.reset, this);
-    this.map.on('move', this.reset, this);
-    this.map.on('overlayadd', this.showGraticule, this);
-    this.map.on('overlayremove', this.clearRect, this);
 
     // Strip any spaces as they can't be used in class names
     this.name = this.name.replace(/\s/g, '');
@@ -77,25 +86,54 @@ export const MGRSGraticuleLayer = L.Layer.extend({
     }
   },
 
+  getEvents: function () {
+    var events = {
+      zoom: this._onZoom,
+      move: this._onMove,
+      moveend: this._update
+    };
+    if (this._zoomAnimated) {
+      events.zoomanim = this._onAnimZoom;
+    }
+    return events;
+  },
+
+  _onZoom: function () {
+    this.reset();
+  },
+
+  _update: function () {
+    this.reset();
+  },
+
+  _onAnimZoom: function (e) {
+    this.reset();
+  },
+
+  _onMove: function (e) {
+    this.reset();
+  },
+
   clearRect(e) {
-    if (e.name === this.name) {
+    //if (e.name === this.name) {
       let ctx = this.canvas.getContext('2d');
       ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
       this.options.showGrid = false;
-    }
+   // }
   },
 
   showGraticule(e) {
-    if (e.name === this.name) {
+   // if (e.name === this.name) {
       this.options.showGrid = true;
       this.reset();
-    }
+   // }
   },
 
   reset() {
     if (!this.options.showGrid) {
       return;
     }
+
     const mapSize = this.map.getSize();
     const mapLeftTop = this.map.containerPointToLayerPoint([0, 0]);
 
@@ -119,6 +157,7 @@ export const MGRSGraticuleLayer = L.Layer.extend({
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.drawGrid(this.ctx);
     this.drawGzd(this.ctx);
+
   },
 
   drawGzd(ctx) {
@@ -491,8 +530,9 @@ export const MGRSGraticuleLayer = L.Layer.extend({
 
       let gzdLabel;
       try {
-        gzdLabel = llToMgrs([labelLongitude, labelLatitude], 1).match(MGRS_REGEX)[GZD_INDEX];
+        gzdLabel = llToMgrs([labelLongitude, labelLatitude], 1).match(this.MGRS_REGEX)[this.GZD_INDEX];
       } catch (error) {
+        console.log(error)
         return; //Invalid MGRS value returned, so no need to try to display a label
       }
 
@@ -567,10 +607,10 @@ export const MGRSGraticuleLayer = L.Layer.extend({
     let visibleGzds;
     try {
       visibleGzds = getAllVisibleGzds(
-        nwBoundMgrs.match(MGRS_REGEX)[GZD_INDEX],
-        neBoundMgrs.match(MGRS_REGEX)[GZD_INDEX],
-        seBoundMgrs.match(MGRS_REGEX)[GZD_INDEX],
-        swBoundMgrs.match(MGRS_REGEX)[GZD_INDEX]
+        nwBoundMgrs.match(this.MGRS_REGEX)[this.GZD_INDEX],
+        neBoundMgrs.match(this.MGRS_REGEX)[this.GZD_INDEX],
+        seBoundMgrs.match(this.MGRS_REGEX)[this.GZD_INDEX],
+        swBoundMgrs.match(this.MGRS_REGEX)[this.GZD_INDEX]
       );
     } catch (e) {
       visibleGzds = null;
@@ -609,10 +649,10 @@ export const MGRSGraticuleLayer = L.Layer.extend({
         return;
       }
 
-      const gzdWestBoundary = gzdObject[NW_INDEX][LONGITUDE_INDEX];
-      const gzdEastBoundary = gzdObject[NE_INDEX][LONGITUDE_INDEX];
-      const gzdNorthBoundary = gzdObject[NW_INDEX][LATITUDE_INDEX];
-      const gzdSouthBoundary = gzdObject[SW_INDEX][LATITUDE_INDEX];
+      const gzdWestBoundary = gzdObject[this.NW_INDEX][this.LONGITUDE_INDEX];
+      const gzdEastBoundary = gzdObject[this.NE_INDEX][this.LONGITUDE_INDEX];
+      const gzdNorthBoundary = gzdObject[this.NW_INDEX][this.LATITUDE_INDEX];
+      const gzdSouthBoundary = gzdObject[this.SW_INDEX][this.LATITUDE_INDEX];
 
       // If drawing HK grids, just draw the entire GZD regardless
       const effectiveWestBoundary =
@@ -834,7 +874,7 @@ export const MGRSGraticuleLayer = L.Layer.extend({
               );
 
               if (labelLl && effectiveBounds.contains(labelLl)) {
-                let labelText = llToMgrs([labelLl.lng, labelLl.lat]).match(MGRS_REGEX)[HK_INDEX];
+                let labelText = llToMgrs([labelLl.lng, labelLl.lat]).match(this.MGRS_REGEX)[this.HK_INDEX];
                 if (
                   this.map
                     .latLngToContainerPoint(L.latLng(currentLl))
